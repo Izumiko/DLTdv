@@ -150,7 +150,7 @@ switch call
   case {99} % Initialize the GUI
     
     fprintf('\n')
-    disp('DLTdv6 (updated May 25, 2017)')
+    disp('DLTdv6 (updated July 12, 2017)')
     fprintf('\n')
     disp('Visit http://www.unc.edu/~thedrick/ for more information,')
     disp('tutorials, sample data & updates to this program.')
@@ -1121,6 +1121,10 @@ switch call
       
     elseif cc=='R' % recompute 3D locations
       disp('Recomputing all 3D coordinates.')
+      [filename, pathname] = uigetfile('*.csv', 'Load new coefficients?');
+      if isempty(filename)==false
+        uda.dltcoef=importdata([pathname,filename]);
+      end
       [uda] = updateDLTdata(uda,1:uda.numpts);
       
     elseif cc=='U' % undo prior whole-point delete/swap/split/join
@@ -3194,6 +3198,12 @@ h(1)=get(varargin{1},'parent');
 % get the userdata
 uda = getappdata(h(1),'Userdata');
 
+[filename, pathname] = uigetfile('*.csv', 'Load new coefficients?');
+if isempty(filename)==false
+  uda.dltcoef=importdata([pathname,filename]);
+end
+[uda] = updateDLTdata(uda,1:uda.numpts);
+
 disp('Recomputing all 3D coordinates.')
 uda=updateDLTdata(uda,1:uda.numpts);
 
@@ -3473,7 +3483,7 @@ for k=1:size(in,2) % for each column
   Xi(nandex,:)=[]; % delete all NaN rows from the interpolation matrices
   Yi(nandex,:)=[];
   
-  if size(Xi,1)>=1 % check that we're not dealing with all NaNs
+  if size(Xi,1)>1 % check that we're not dealing with all NaNs
     Ynew=interp1(Xi,Yi,nandex,type,'extrap'); % interpolate new Y values
     in(nandex,k)=Ynew; % set the new Y values in the matrix
     if sum(isnan(Ynew))>0
@@ -3481,7 +3491,7 @@ for k=1:size(in,2) % for each column
       break
     end
   else
-    % only NaNs, don't interpolate
+    % only NaNs or a single value, don't interpolate
   end
   
 end
@@ -3707,7 +3717,7 @@ else % fname is not a char so it is an mmreader or videoreader obj
       % ftime set to the beginning of the desired frame
       ftime=(frame-1)*(1/fname.FrameRate);
       %disp(['ftime is ',num2str(ftime)])
-      if abs(ctime-ftime)<(1/(fname.FrameRate*1.1))
+      if abs(ctime-ftime)<(1/(fname.FrameRate*1.2))
         % multiply by 1.1 to eliminate ambiguities when ctime-ftime is
         % approximately 1 frame and differences are due to numeric
         % imprecision
@@ -3717,7 +3727,7 @@ else % fname is not a char so it is an mmreader or videoreader obj
         %disp('seeking not needed')
       else
         fname.CurrentTime=ftime;
-        %disp('seeking')
+        disp('seeking')
       end
       mov.cdata=fname.readFrame;
       %ctime2=fname.CurrentTime;
