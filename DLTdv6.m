@@ -43,6 +43,7 @@ function [] = DLTdv6(varargin)
 % to that specified in the time series window
 % 2017-05-11 - try and detect bad video files, bugfix for point swap from
 % Dimitri Skandalis
+% 2017-12-12 - fixes for r2017b compatbility
 
 %% Function initialization
 if nargin==0 % no inputs, just fix the path and run the gui
@@ -150,7 +151,7 @@ switch call
   case {99} % Initialize the GUI
     
     fprintf('\n')
-    disp('DLTdv6 (updated July 12, 2017)')
+    disp('DLTdv6 (updated Dec 12, 2017)')
     fprintf('\n')
     disp('Visit http://www.unc.edu/~thedrick/ for more information,')
     disp('tutorials, sample data & updates to this program.')
@@ -694,10 +695,12 @@ switch call
           
         case 'no'
           uda.dlt=0; % DLT off
+          set(uda.handles(53),'value',0); % turn off DLT visualization
       end
       
     else
       uda.dlt=0; % DLT off (if uda.nvid~>1)
+      set(uda.handles(53),'value',0); % turn off DLT visualization
     end
     
     % turn on the other controls
@@ -1155,36 +1158,41 @@ switch call
       end
       
     elseif cc=='D' % remove current point from the data array
-      [button] = questdlg(['Really remove point #',num2str(sp),' from the data?'],'Really?');
-      
-      if strcmp(button,'Yes')
-        % store backup for undo
-        uda=storeUndo(uda);
-        
-        % update number of points
-        uda.numpts=uda.numpts+-1;
-        
-        % update the number of points settings
-        ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
-        for i=1:uda.numpts-1
-          ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
-        end
-        ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
-        set(h(32),'String',ptstring);
-        set(h(32),'Value',uda.numpts(end)); % update value to the last point
-        
-        % update the data matrices by removing the deleted point
-        uda.xypts(:,(1:2*uda.nvid)+(sp-1)*2*uda.nvid)=[];
-        uda.dltpts(:,sp*3-2:sp*3)=[];
-        uda.dltres(:,sp)=[];
-        
-        setappdata(h(1),'Userdata',uda); % write the new Userdata back
-        
-        %DLTdv6(1,uda); % call self to update video frames
-        fullRedraw(uda);
-        disp('Point deleted.')
+      if uda.numpts==1
+        beep
+        disp('You need to have 2 or more points defined to remove one.')
       else
-        disp('Delete canceled.')
+        [button] = questdlg(['Really remove point #',num2str(sp),' from the data?'],'Really?');
+        
+        if strcmp(button,'Yes')
+          % store backup for undo
+          uda=storeUndo(uda);
+          
+          % update number of points
+          uda.numpts=uda.numpts+-1;
+          
+          % update the number of points settings
+          ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
+          for i=1:uda.numpts-1
+            ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+          end
+          ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+          set(h(32),'String',ptstring);
+          set(h(32),'Value',uda.numpts(end)); % update value to the last point
+          
+          % update the data matrices by removing the deleted point
+          uda.xypts(:,(1:2*uda.nvid)+(sp-1)*2*uda.nvid)=[];
+          uda.dltpts(:,sp*3-2:sp*3)=[];
+          uda.dltres(:,sp)=[];
+          
+          setappdata(h(1),'Userdata',uda); % write the new Userdata back
+          
+          %DLTdv6(1,uda); % call self to update video frames
+          fullRedraw(uda);
+          disp('Point deleted.')
+        else
+          disp('Delete canceled.')
+        end
       end
       
     elseif cc=='J' % bring up joiner interface
@@ -1865,7 +1873,7 @@ switch call
       disp('Corrected invalid input, video offsets must be integers')
       set(gcbo,'String','0'); % set the offset to zero
     end
-    uda.reloadVid=true;
+    uda.reloadVid=false; % set from true to false, 2017-12-13
     %DLTdv6(1,uda); % call self to update video frames
     fullRedraw(uda);
     
@@ -2939,7 +2947,7 @@ for i=vidlist %1:uda.nvid % using vidlist only updates the active video(s)
   if uda.xypts(fr,i*2+(sp-1)*2*uda.nvid)~=0
     plot(h(i+300),uda.xypts(fr,(i)*2-1+(sp-1)*2*uda.nvid), ...
       uda.xypts(fr,i*2+(sp-1)*2*uda.nvid),'ro', ...
-      'HitTest','off','markersize',14,'linewidth',2);
+      'HitTest','off','markersize',14); % ,'linewidth',2 removed for r2017b bugs
   end
   
   % get the user settings for plotting the extended DLT information
@@ -2996,7 +3004,10 @@ for i=vidlist %1:uda.nvid % using vidlist only updates the active video(s)
       
       camD=uda.camd{i};
       
-      if isfield(camD.tdata,'ControlPoints')==true
+      if isa(camD,'images.geotrans.LocalWeightedMeanTransformation2D')
+        % This form of the LWM transformation is nicer and produces output
+        % that's easier to clean up; no work to be done now
+      elseif isfield(camD.tdata,'ControlPoints')==true
         D=zeros(size(xyptsN,1),1);
         for j=1:size(xyptsN,1)
           d=rnorm(camD.tdata.ControlPoints-repmat(xyptsN(j,:),...
@@ -3009,6 +3020,11 @@ for i=vidlist %1:uda.nvid % using vidlist only updates the active video(s)
       
       % distort the line of zero error
       xyptsN=applyTform(camD,xyptsN);
+      
+      % clean geotrans LWM output here
+      if isa(camD,'images.geotrans.LocalWeightedMeanTransformation2D')
+        xyptsN(abs(xyptsN(:,1))>1e10,:)=[];
+      end
       
       xpts=xyptsN(:,1);
       ypts=xyptsN(:,2);
@@ -4252,7 +4268,7 @@ output(:,3)=input(:,1).*rotm(3,1)+input(:,2).*rotm(3,2)+input(:,3).*rotm(3,3);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% applyTform
 
-function [ptsT]=applyTform(T,pts)
+function [ptsT]=applyTform(T,pts);
 
 % function [ptsT]=applyTform(T,pts)
 %
@@ -4261,9 +4277,13 @@ function [ptsT]=applyTform(T,pts)
 
 ptsT=pts;
 
-idx=find(isnan(pts(:,1))==0);
-if numel(idx)>0
-  [ptsT(idx,1),ptsT(idx,2)]=tforminv(T,pts(idx,1),pts(idx,2));
+idx=find(sum(isnan(pts),2)==0);
+
+if isstruct(T)
+    [ptsT(idx,1),ptsT(idx,2)]=tforminv(T,pts(idx,1),pts(idx,2));
+else
+    % try the new method using an inverse transform method
+    [ptsT(idx,:)]=T.transformPointsInverse(pts(idx,:));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4557,6 +4577,7 @@ if strcmp(get(h(5),'enable'),'on')==1 % if initialized
       
       % read the video frame if possible and/or necessary
       % check the cache
+      % disp(fr+offset)
       idx=find(cdataCacheIdx{i}==fr+offset);
       if numel(idx)>0 & uda.reloadVid==false
         mov.cdata=cdataCache{i}{idx(1)};
