@@ -1,6 +1,6 @@
 This is the development repository for DLTdv and friends. 
 
-See https://biomech.web.unc.edu/ for stable versions, sample data and so on.
+See https://biomech.web.unc.edu/dltdv/ for stable versions, sample data and so on.
 
 Current development by Ty Hedrick is focused on DLTdv6, which works on the latest versions of MATLAB,
 introduces a "sparse" data file format which only stores the not-NaN data and has an option for only
