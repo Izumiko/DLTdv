@@ -154,7 +154,7 @@ switch call
   case {99} % Initialize the GUI
     
     fprintf('\n')
-    disp('DLTdv7 (updated August 27, 2018)')
+    disp('DLTdv7 (updated August 28, 2018)')
     fprintf('\n')
     disp('Visit https://biomech.web.unc.edu/dltdv/ for more information,')
     disp('tutorials, sample data & updates to this program.')
@@ -997,9 +997,9 @@ switch call
       quickRedraw(uda,h,sp,fr);
       
     elseif cc==' ' % space bar (digitize a point)
-      set(h(2),'CurrentAxes',axh); % set the current axis
-      axpos=get(axh,'Position'); % axis position in figure
-      xl=xlim; yl=ylim; % x & y limits on axis
+      %set(h(2),'CurrentAxes',axh); % set the current axis
+      axpos=get(h(axh),'Position'); % axis position in figure
+      xl=xlim(h(axh)); yl=ylim(h(axh)); % x & y limits on axis
       % calculate the normalized position within the axis
       plocal2=[(plocal(1)-axpos(1,1))/axpos(1,3) (plocal(2) ...
         -axpos(1,2))/axpos(1,4)];
@@ -1018,21 +1018,8 @@ switch call
       axpix(3)=pos(3)*axpos(3);
       axpix(4)=pos(4)*axpos(4);
       
-      % adjust pixels for distortion due to normalized axes
-      xRatio=(axpix(3)/axpix(4))/(diff(xl)/diff(yl));
-      yRatio=(axpix(4)/axpix(3))/(diff(yl)/diff(xl));
-      if xRatio > 1
-        xmp=xl(1)+(xl(2)-xl(1))/2;
-        xmpd=pixpos(1)-xmp;
-        pixpos(1)=pixpos(1)+xmpd*(xRatio-1);
-      elseif yRatio > 1
-        ymp=yl(1)+(yl(2)-yl(1))/2;
-        ympd=pixpos(2)-ymp;
-        pixpos(2)=pixpos(2)+ympd*(yRatio-1);
-      end
-      
       % setup oData for the digitization routine
-      oData.seltype='standard';
+      oData.seltype='normal';
       oData.cp=pixpos;
       oData.axn=vnum;
       DLTdv7(3,uda,oData); % digitize a point
@@ -1297,8 +1284,9 @@ switch call
     
     autoT=get(h(35),'Value'); % 1=off, 2=advance, 3=semi, 4=auto, 5=multi
     
-    if strcmp(get(gcbo,'Tag'),'VideoFigure')
-      % entered the function via space bar, not mouse click
+    %if strcmp(get(gcbo,'Tag'),'moviefig')
+    if strfind(get(gcbo,'Tag'),'movieFig')==1
+      % entered the function via space bar or z, not mouse click
       seltype=oData.seltype;
       axn=oData.axn;
       cp=oData.cp;
