@@ -154,7 +154,7 @@ switch call
   case {99} % Initialize the GUI
     
     fprintf('\n')
-    disp('DLTdv7 (updated August 28, 2018)')
+    disp('DLTdv7 (updated February 11, 2019)')
     fprintf('\n')
     disp('Visit https://biomech.web.unc.edu/dltdv/ for more information,')
     disp('tutorials, sample data & updates to this program.')
@@ -489,12 +489,13 @@ switch call
       % browse for each video file
       pause(0.01); % make sure that the uigetfile executed (MATLAB bug)
       [fname1,pname1] = uigetfile( ...
-        {'*.asf;*.avi;*.cin;*.cine;*.mp4;*.mrf;*.mov;*.wmv;*.ASF;*.AVI;*.CIN;*.CINE;*.MP4;*.MRF;*.MOV;*.WMV', ...
-        'All movie files (*.avi, *.asf, *.cin, *.cine, *.mp4, *.mrf, *.mov, *.wmv)'; ...
-        '*.avi;*.AVI','AVI movies (*.avi)'; ...
+        {'*.asf;*.avi;*.cin;*.cine;*.mp4;*.mrf;*.mov;*.wmv;*.cih;*.ASF;*.AVI;*.CIN;*.CINE;*.MP4;*.MRF;*.MOV;*.WMV;*.CIH;', ...
+        'All movie dsdsa files (*.avi, *.asf, *.cin, *.cine, *.mp4, *.mrf, *.mov, *.wmv, *.cih)'; ...
+        '*.avi;*.AVI','AVI abc movies (*.avi)'; ...
         '*.cin;*.CIN;*.cine;*.CINE','Phantom movies (*.cin,*.cine)'; ...
         '*.mp4;*.MP4','mpeg4 movies (*.mp4)'; ...
         '*.mrf;*.MRF','IDT Redlake movies (*.mrf)'; ...
+        '*.cih;*.CIH','Photron Files (*.cih)'; ...
         '*.mov;*.MOV','Apple movies (*.mov)'; ...
         '*.asf;*.ASF;*.wmv;*.WMV','Windows media movies (*.asf, *.wmv)'}, ...
         sprintf('Pick movie file %.0d',i));
@@ -923,7 +924,8 @@ switch call
       
     elseif cc=='.' || cc==',' % change point
       % get current pull-down list (available points)
-      ptnum=numel(get(h(32),'String'))/3; % need str2num here
+      %ptnum=numel(get(h(32),'String'))/3; % need str2num here
+      ptnum=size(get(h(32),'string'),1);
       ptval=get(h(32),'Value'); % selected point
       if cc==',' && ptval>1 % decrease point value if able
         set(h(32),'Value',ptval-1);
@@ -931,6 +933,8 @@ switch call
       elseif cc=='.' && ptval<ptnum % increase pt value if able
         set(h(32),'Value',ptval+1);
         ptval=ptval+1;
+      else
+        ptval=ptnum;
       end
       
       pt=uda.xypts(fr,(vnum*2-1:vnum*2)+(ptval-1)*2*uda.nvid);
@@ -1050,11 +1054,19 @@ switch call
         uda.dltres=uda.bak.dltres;
         
         % update the number of points settings
-        ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
-        for i=1:uda.numpts-1
-          ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%         ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
+%         for i=1:uda.numpts-1
+%           ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%         end
+%         ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+        
+        ptstring=char([]);
+        % get the right sprintf format string
+        spFormatString=['%',num2str(max([3,numel(num2str(uda.numpts))])),'d'];
+        for i=1:uda.numpts
+          ptstring(i,:)=sprintf(spFormatString,i);
         end
-        ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+        
         set(h(32),'String',ptstring);
         set(h(32),'Value',1); % update value to the first point
         
@@ -1083,11 +1095,19 @@ switch call
           uda.numpts=uda.numpts+-1;
           
           % update the number of points settings
-          ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
-          for i=1:uda.numpts-1
-            ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%           ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
+%           for i=1:uda.numpts-1
+%             ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%           end
+%           ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+%           
+          ptstring=char([]);
+          % get the right sprintf format string
+          spFormatString=['%',num2str(max([3,numel(num2str(uda.numpts))])),'d'];
+          for i=1:uda.numpts
+            ptstring(i,:)=sprintf(spFormatString,i);
           end
-          ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+          
           set(h(32),'String',ptstring);
           set(h(32),'Value',uda.numpts(end)); % update value to the last point
           
@@ -1136,14 +1156,25 @@ switch call
         
         uda.numpts=uda.numpts-1; % update number of points
         
-        % update the number of points settings
-        ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
-        for i=1:uda.numpts-1
-          ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+        % set pull-down menu
+        % fix the string for the current point menu
+        ptstring=char([]);
+        % get the right sprintf format string
+        spFormatString=['%',num2str(max([3,numel(num2str(uda.numpts))])),'d'];
+        for i=1:uda.numpts
+          ptstring(i,:)=sprintf(spFormatString,i);
         end
-        ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
         set(h(32),'String',ptstring);
         set(h(32),'Value',sp); % update value to the current point
+        
+%         % update the number of points settings
+%         ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
+%         for i=1:uda.numpts-1
+%           ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%         end
+%         ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+%         set(h(32),'String',ptstring);
+%         set(h(32),'Value',sp); % update value to the current point
         
         % Compute 3D coordinates + residuals
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1247,11 +1278,19 @@ switch call
         uda.dltres(:,uda.numpts)=0;
         
         % update the number of points settings
-        ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
-        for i=1:uda.numpts-1
-          ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%         ptstring=char(ones(1,uda.numpts*2+uda.numpts-1));
+%         for i=1:uda.numpts-1
+%           ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%         end
+%         ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+        
+        ptstring=char([]);
+        % get the right sprintf format string
+        spFormatString=['%',num2str(max([3,numel(num2str(uda.numpts))])),'d'];
+        for i=1:uda.numpts
+          ptstring(i,:)=sprintf(spFormatString,i);
         end
-        ptstring(1,uda.numpts*4-3:uda.numpts*4-1)=sprintf('%3d',uda.numpts);
+        
         set(h(32),'String',ptstring);
         set(h(32),'Value',sp); % update value to the current point
         
@@ -1745,12 +1784,19 @@ switch call
       'Warning','warn','modal')
     
     % update the number of points settings
-    uda.numpts=numpts;
-    ptstring=char(ones(1,numpts*2+numpts-1));
-    for i=1:uda.numpts-1
-      ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%     uda.numpts=numpts;
+%     ptstring=char(ones(1,numpts*2+numpts-1));
+%     for i=1:uda.numpts-1
+%       ptstring(1,i*4-3:i*4)=sprintf('%3d|',i);
+%     end
+%     ptstring(1,numpts*4-3:numpts*4-1)=sprintf('%3d',numpts);
+    
+    ptstring=char([]);
+    % get the right sprintf format string
+    spFormatString=['%',num2str(max([3,numel(num2str(uda.numpts))])),'d'];
+    for i=1:uda.numpts
+      ptstring(i,:)=sprintf(spFormatString,i);
     end
-    ptstring(1,numpts*4-3:numpts*4-1)=sprintf('%3d',numpts);
     set(h(32),'String',ptstring);
     
     % set selected point back to 1
@@ -1852,10 +1898,17 @@ switch call
     uda.numpts=uda.numpts+1; % update number of points
     ptstring=get(h(32),'String'); % get current pull-down list
     % update pull-down list string
-    if uda.numpts<3
-      ptstring=[ptstring,'|',sprintf('%3d',uda.numpts)];
-    else
-      ptstring(end+1,:)=sprintf('%3d',uda.numpts);
+%     if uda.numpts<3
+%       ptstring=[ptstring,'|',sprintf('%3d',uda.numpts)];
+%     else
+%       ptstring(end+1,:)=sprintf('%3d',uda.numpts);
+%     end
+    
+    ptstring=char([]);
+    % get the right sprintf format string
+    spFormatString=['%',num2str(max([3,numel(num2str(uda.numpts))])),'d'];
+    for i=1:uda.numpts
+      ptstring(i,:)=sprintf(spFormatString,i);
     end
     set(h(32),'String',ptstring); % write updated list back
     set(h(32),'Value',uda.numpts(end)); % update value to the new point
@@ -2086,8 +2139,9 @@ if size(roi,3)==1 % grayscale
   roi2=(double(roi).^gamma).*(255/255^gamma);
   image('Parent',h(51),'Cdata',roi2,'CDataMapping','scaled');
 else % color
-  roi2=roi+(1-gamma)*128;
-  image('Parent',h(51),'Cdata',roi2);
+  %roi2=roi+(1-gamma)*128; % no ROI gamma scaling for color images, already
+  %done to the image itself before display
+  image('Parent',h(51),'Cdata',roi);
 end
 
 edgelen=size(roi,1);
@@ -3454,17 +3508,21 @@ for i=1:uda.nvid
   if exist(udExport.video.files{i},'file')==2 % file exists
     setappdata(uda.handles(300+i),'fname',udExport.video.files{i});
   else
-    [fname1,pname1] = uigetfile( ...x
-      {'*.asf;*.avi;*.cin;*.cine;*.mp4;*.mrf;*.mov;*.wmv;*.ASF;*.AVI;*.CIN;*.CINE;*.MP4;*.MRF;*.MOV;*.WMV', ...
-      'All movie files (*.avi, *.asf, *.cin, *.cine, *.mp4, *.mrf, *.mov, *.wmv)'; ...
-      '*.avi;*.AVI','AVI movies (*.avi)'; ...
+    [fname1,pname1] = uigetfile( ...
+      {'*.asf;*.avi;*.cin;*.cine;*.mp4;*.mrf;*.mov;*.wmv;*.cih;*.ASF;*.AVI;*.CIN;*.CINE;*.MP4;*.MRF;*.MOV;*.WMV;*.CIH;', ...
+      'All movie abcd files (*.avi, *.asf, *.cin, *.cine, *.mp4, *.mrf, *.mov, *.wmv, *.cih)'; ...
+      '*.avi;*.AVI','AVI fds movies (*.avi)'; ...
       '*.cin;*.CIN;*.cine;*.CINE','Phantom movies (*.cin,*.cine)'; ...
       '*.mp4;*.MP4','mpeg4 movies (*.mp4)'; ...
       '*.mrf;*.MRF','IDT Redlake movies (*.mrf)'; ...
+      '*.cih;*.CIH','Photron Files (*.cih)'; ...
       '*.mov;*.MOV','Apple movies (*.mov)'; ...
       '*.asf;*.ASF;*.wmv;*.WMV','Windows media movies (*.asf, *.wmv)'}, ...
       sprintf('Movie file %s (movie #%.0d) is missing, locate it if possible.',udExport.video.files{i},i));
     setappdata(uda.handles(300+i),'fname',[pname1,fname1]);
+    
+    % try and get general path fix
+    %disp('foo')
   end
   
   % set misc. properties for video windows
@@ -3615,7 +3673,7 @@ uda.handles=h;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% dvFrameRateUpdate
-function [] = dvFrameRateUpdate()
+function [] = dvFrameRateUpdate(varargin)
 
 % get master uda
 h=get(gcbo,'parent');
@@ -4366,9 +4424,16 @@ elseif strcmpi(fname(end-4:end),'.cine')
   info=cineInfo(fname);
 elseif strcmpi(fname(end-3:end),'.mrf')
   info=mrfInfo(fname);
+elseif strcmpi(fname(end-3:end),'.cih')
+  info=cihInfo(fname);
 else
   info=[];
   disp('mediaInfo: bad file extension')
+end
+
+% set better default framerate
+if isnan(info.frameRate) | info.frameRate==0
+  info.frameRate=1;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4410,6 +4475,8 @@ if ischar(fname)
     mov.cdata=cineRead(fname,frame);
   elseif strcmpi(fname(end-3:end),'.mrf') % IDT/Redlake multipage raw
     mov.cdata=mrfRead(fname,frame);
+  elseif strcmpi(fname(end-3:end),'.cih') % Photron Mraw raw
+    mov.cdata=cihRead(fname,frame);
   else
     mov=[];
     disp('mediaRead: bad file extension')
@@ -5352,8 +5419,11 @@ if strcmp(get(h(5),'enable'),'on')==1 % if initialized
         redlakeplot(mov.cdata(:,:,1),h(i+300));
         colormap(h(i+300),cnew);
       elseif colorVal==1 && size(mov.cdata,3)==1 % color w/ gray video
-        redlakeplot(repmat(mov.cdata(:,:,1)+(1-get(h(13),'Value') ...
-          )*128,[1,1,3]),h(i+300));
+        %redlakeplot(repmat(mov.cdata(:,:,1)+(1-get(h(13),'Value'))*128,[1,1,3]),h(i+300));
+        img=double(mov.cdata);
+        %img=img./max(max(img))+(1-get(h(13),'Value'))*0.5;
+        img=(img./max(max(img))).^get(h(13),'Value');
+        redlakeplot(repmat(img,[1,1,3]),h(i+300));
       else % color display with color video
         % do the gamma scaling - since truecolor images don't have a
         % colormap, it is not possible to do quick nonlinear transforms
@@ -5583,7 +5653,8 @@ elseif cc=='f' || cc=='b' || cc=='F' || cc=='B' || cc=='<' || cc=='>' && axh~=0
   end
 elseif cc=='.' || cc==',' % change point
   % get current pull-down list (available points)
-  ptnum=numel(get(h(32),'String'))/3; % need str2num here
+  %ptnum=numel(get(h(32),'String'))/3; % need str2num here
+  ptnum=size(get(h(32),'string'),1);
   ptval=get(h(32),'Value'); % selected point
   if cc==',' && ptval>1 % decrease point value if able
     set(h(32),'Value',ptval-1);
@@ -5673,6 +5744,8 @@ if uda.dlt && idx<=3
 elseif uda.dlt==true
   doXY=true;
   idx=idx-3; % remove X-Y-Z index positions
+else
+  doXY=true;
 end
 
 if doXY
@@ -5735,3 +5808,189 @@ else % fill = true
     end
   end
 end
+
+%% cihInfo
+function [info] = cihInfo(fileName)
+
+% function [info] = cihInfo(fileName)
+%
+% Reads header information from a Photron header file (*.cih)
+% file.
+%
+% info.Width - image width
+% info.Height - image height
+% info.bitDepth - image bit depth
+% info.NumFrames - total number of frames
+% info.frameRate - recording frame rate
+% 
+% info.filetype - File Format
+% info.bitSide - EffectiveBit Side
+% info.bitDepth - EffectiveBit Depth
+
+% Talia Weiss, 9/1/2018 [added with permission to DLTdv7 by Ty Hedrick]
+
+% check for an mrf suffix
+if strcmpi(fileName(end-3:end),'.cih')
+  
+  % get a file handle from the filename
+  f1=fopen(fileName);
+  
+  tline = fgetl(f1);
+  linenum = 1;
+  while linenum < 82 %first part of the cih file
+    tline = fgetl(f1); %get line starting at line 2
+    linenum = linenum + 1;
+    if ~strcmp(tline, '')
+      if ~strcmp(tline, 'END') & ~strcmp(tline(1), '#')
+        tcell = cellfun(@(x) strtrim(x), strsplit(tline, ':'), 'UniformOutput', 0);
+        
+        name = tcell{1};
+        val = tcell{2};
+        
+        if strcmp(name, 'Total Frame')
+          info.NumFrames = str2num(val);
+          
+        elseif strcmp(name, 'Image Width')
+          info.Width = str2num(val);
+          
+        elseif strcmp(name, 'Image Height')
+          info.Height = str2num(val);
+          
+        elseif strcmp(name, 'Color Bit')
+          info.bitDepth = str2num(val);
+          
+        elseif strcmp(name, 'Record Rate(fps)')
+          info.frameRate = str2num(val);
+          
+        elseif strcmp(name, 'File Format')
+          info.filetype = val;
+        elseif strcmp(name, 'EffectiveBit Side')
+          info.bitSide = val;
+        elseif strcmp(name, 'EffectiveBit Depth')
+          info.bitDepthRec = str2num(val);
+        end
+      end
+    end
+  end
+  
+  
+  % release the file handle
+  fclose(f1);
+  info.variableTiming = 0;
+else
+  fprintf('%s does not appear to be an cih file.',fileName)
+  info=[];
+  
+  if strcmp(info.filetype, 'MRaw')
+    fprintf('%s does not appear to be be for an mraw file.',fileName)
+    info = [];
+  end
+end
+
+%% cihRead
+
+function [cdata] = cihRead(fileName,frameNum)
+
+% function [cdata] = cihRead(fileName,frameNum)
+%
+% Reads the frame specified by frameNum from the Photron mraw camera file
+% specified by fileName.
+%
+% frameNum is 1-based and starts from the first frame available in the
+% file.
+%
+% Talia Weiss 9/1/2018 [added with permission to DLTdv7 by Ty Hedrick
+
+if exist('frameNum','var')==false
+  % generate exception
+  errS = sprintf('frameNum input not present');
+  err = MException('cihRead:noFrameNum',errS);
+  throw(err);
+end
+
+% check inputs & get file information
+if strcmpi(fileName(end-3:end),'.cih')
+  % get file info from the mrfInfo function
+  info=cihInfo(fileName);
+else
+  % generate exception
+  errS = sprintf('%s does not appear to be a valid cih file',fileName);
+  err = MException('cihRead:BadFileExtension',errS);
+  throw(err);
+end
+
+if frameNum<=info.NumFrames & frameNum>0
+  % figure out bits on disk per pixel
+  if info.bitDepth==8
+    bpp=8;
+  elseif info.bitDepth>8 && info.bitDepth<17
+    bpp=16;
+  elseif info.bitDepth==24
+    bpp=24;
+  else
+    cdata=[];
+    disp('cihRead error: unknown bitdepth')
+    return
+  end
+  
+  % get the filename of the mraw file
+  mraw = [fileName(1:end-3), 'mraw'];
+  
+  % offset is the location of the start of the target frame in the file -
+  % the pad + 8bits for each frame + the size of all the prior frames
+  offset=(frameNum-1)* ...
+    (info.Height*info.Width*bpp/8);
+  
+  % get a handle to the file from the filename
+  f1=fopen(mraw);
+  
+  % could not open file
+  if f1==-1
+    errS = sprintf('Unable to open mraw file %s',mraw);
+    err = MException('cihRead:CannotOpenFile',errS);
+    throw(err);
+  end
+  
+  % seek ahead from the start of the file to the offset (the beginning of
+  % the target frame)
+  fseek(f1,offset,-1);
+  
+  % read a certain amount of data in - the amount determined by the size
+  % of the frames and the camera bit depth, then cast the data to either
+  % 8bit or 16bit unsigned integer
+  if bpp==8 % 8bit gray
+    idata=fread(f1,info.Height*info.Width,'*uint8');
+    nDim=1;
+  elseif bpp==16 % 10, 12 14 or 16 bit gray
+    idata=uint16(fread(f1,info.Height*info.Width,'*uint16'));
+    nDim=1;
+  elseif bpp==24 % 24bit color
+    idata=double(fread(f1,info.Height*info.Width*3,'*uint8'))/255;
+    nDim=3;
+  else
+    disp('error: unknown bitdepth')
+    return
+  end
+  
+  if info.bitDepthRec ~= info.bitDepth && strcmp(info.bitSide, 'Lower')
+    idata = bitshift(idata, info.bitDepth - info.bitDepthRec);
+  end
+   
+  % destroy the handle to the file
+  fclose(f1);
+  
+  % the data come in from fread() as a 1 dimensional array; here we
+  % reshape them to a 2-dimensional array of the appropriate size
+  %cdata=zeros(info.Height,info.Width,nDim);
+  for i=1:nDim
+    tdata=reshape(idata(i:nDim:end),info.Width,info.Height);
+    cdata(:,:,i)=fliplr(flipud(rot90(tdata,-1)));
+  end
+else
+  % generate exception
+  errS = sprintf('%s has %.0f frames; you requested frame %.0f', ...
+    fileName,info.NumFrames,frameNum);
+  err = MException('cihRead:OutOfRange',errS);
+  throw(err);
+end
+
